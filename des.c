@@ -317,8 +317,6 @@ int main(int argc, char** argv) {
 
   fclose(input_file);
 
-  printf("File input: %lx\n", *file_buffer);
-
   const uint64_t key = 0x133457799BBCDFF1;
 
   if(strcmp(argv[1], "-e") == 0) {
@@ -326,12 +324,9 @@ int main(int argc, char** argv) {
     const unsigned int output_byte_count = elements_to_read * sizeof(uint64_t);
     file_buffer[elements_to_read - 1] = pkcs5_padding(&file_buffer[elements_to_read - 1], output_byte_count - file_size);
 
-    printf("Padded: %lx\n", *file_buffer);
     uint64_t* encoded_file_buffer = encode(file_buffer, output_byte_count, key);
 
     write_to_file(output_file_name, (uint8_t*)encoded_file_buffer, output_byte_count);
-
-    printf("Encrypted: %lx\n", *encoded_file_buffer);
 
     free(encoded_file_buffer);
 
@@ -343,11 +338,6 @@ int main(int argc, char** argv) {
     const size_t output_byte_count = file_size - bytes_of_padding;
 
     write_to_file(output_file_name, (uint8_t*)decoded_file_buffer, output_byte_count);
-
-    printf("Padding removed: %lx\n", (*decoded_file_buffer) >> bytes_of_padding * 8);
-
-    printf("Decrypted: %lx\n", *decoded_file_buffer);
-
 
     free(decoded_file_buffer);
   } else {
