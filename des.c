@@ -276,8 +276,12 @@ unsigned int count_padding_bytes(const uint64_t* block) {
 
 void print_help_message() {
   printf("Usage:\n\
-      des -e input output\n\
-      des -d input output\n");
+      des -e input -k key output\n\
+      des -d input -k key output\n");
+}
+
+void print_key_error_msg() {
+  printf("Key has to be 8 characters long\n");
 }
 
 void write_to_file(const char* file_name, const uint8_t* data, const unsigned int file_size) {
@@ -295,12 +299,18 @@ void write_to_file(const char* file_name, const uint8_t* data, const unsigned in
 
 int main(int argc, char** argv) {
 
-  if(argc != 4) {
+  if(argc != 6) {
     print_help_message();
     return 0;
   }
   const char* input_file_name = argv[2];
-  const char* output_file_name = argv[3];
+  const char* key_string = argv[4];
+  if(strlen(key_string) != 8) {
+    print_key_error_msg();
+    return 1;
+  }
+  const uint64_t key = *(uint64_t*)key_string;
+  const char* output_file_name = argv[5];
   FILE* input_file = fopen(input_file_name, "rb");
 
   // obtain file size:
@@ -316,8 +326,6 @@ int main(int argc, char** argv) {
   fread(file_buffer, sizeof(uint8_t), file_size, input_file);
 
   fclose(input_file);
-
-  const uint64_t key = 0x133457799BBCDFF1;
 
   if(strcmp(argv[1], "-e") == 0) {
     // add padding to the last element (if needed)
