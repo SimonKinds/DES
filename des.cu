@@ -28,6 +28,29 @@ void permutate(const uint8_t* input_array,
   }
 }
 
+__device__
+void permutate_gpu(const uint8_t* input_array,
+                   const unsigned int input_bit_count,
+                   uint8_t* output_array,
+                   const unsigned int output_bit_cunt,
+                   const unsigned int* permutation_array) {
+  for(unsigned int i = 0; i < output_bit_cunt; ++i) {
+    // all indexes in the permutation arrays are starting at 1
+    unsigned int original_pos = permutation_array[i] - 1;
+    
+    // starts counting from left to right (MSB = 0)
+    uint8_t original_index = (input_bit_count - original_pos - 1) / 8;
+    uint8_t original_bit_pos = (input_bit_count - original_pos + 7) % 8;
+
+    // use a bit mask to only have it be one bit, in the LSB
+    uint8_t original_value = (input_array[original_index] & ( 1 << original_bit_pos )) >> original_bit_pos;
+
+    uint8_t new_index = (output_bit_cunt - i - 1) / 8;
+    uint8_t new_bit_pos = (output_bit_cunt - i + 7) % 8;
+    output_array[new_index] |= original_value << new_bit_pos;
+  }
+}
+
 uint64_t initial_permutation(const uint64_t* message) {
   uint64_t permutated = 0;
   permutate((uint8_t*)message, BLOCK_SIZE, (uint8_t*)&permutated, BLOCK_SIZE, IP_PERMUTATION_ARRAY);

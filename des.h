@@ -8,6 +8,12 @@ void permutate(const uint8_t* input_array,
                    uint8_t* output_array,
                    const unsigned int output_bit_cunt,
                    const unsigned int* permutation_array);
+__device__
+void permutate_gpu(const uint8_t* input_array,
+                   const unsigned int input_bit_count,
+                   uint8_t* output_array,
+                   const unsigned int output_bit_cunt,
+                   const unsigned int* permutation_array);
 
 uint64_t initial_permutation(const uint64_t* message);
 uint64_t inverse_initial_permutation(const uint64_t* data);
