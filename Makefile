@@ -1,2 +1,2 @@
 all: 
-	gcc des.c -o des -Wall -Wpedantic -Wextra -Werror -O2
+	nvcc des.cu -o des -arch=sm_50

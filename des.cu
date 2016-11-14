@@ -93,7 +93,7 @@ uint64_t* generate_subkeys(const uint64_t key) {
     ds[i] = left_shift_rotate(ds[i - 1], KEY_SHIFT_ARRAY[i]);
   }
 
-  uint64_t* subkeys = malloc(AMOUNT_OF_KEYS * sizeof(uint64_t));
+  uint64_t* subkeys = (uint64_t*)malloc(AMOUNT_OF_KEYS * sizeof(uint64_t));
   for(unsigned int i = 0; i < AMOUNT_OF_KEYS; ++i) {
     uint64_t k_pre_permutation = concatCD(cs[i], ds[i]);
     uint64_t k = key_permutation_second(&k_pre_permutation);
@@ -105,7 +105,7 @@ uint64_t* generate_subkeys(const uint64_t key) {
 }
 
 uint64_t* reverse_order(const uint64_t* subkeys) {
-  uint64_t* reversed = malloc(AMOUNT_OF_KEYS * sizeof(uint64_t));
+  uint64_t* reversed = (uint64_t*)malloc(AMOUNT_OF_KEYS * sizeof(uint64_t));
 
   for(unsigned int i = 0; i < AMOUNT_OF_KEYS; ++i) {
     reversed[ AMOUNT_OF_KEYS - i - 1 ] = subkeys[i];
@@ -219,7 +219,7 @@ uint64_t des(const uint64_t* message, const uint64_t* subkeys) {
 uint64_t* encode(const uint64_t* message, const unsigned int size, const uint64_t key) {
   uint64_t* subkeys = generate_subkeys(key);
 
-  uint64_t* encoded_message = malloc(size);
+  uint64_t* encoded_message = (uint64_t*)malloc(size);
 
   for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
     encoded_message[i] = des(&message[i], subkeys);
@@ -233,7 +233,7 @@ uint64_t* decode(const uint64_t* encoded, const unsigned int size, const uint64_
   uint64_t* subkeys = generate_subkeys(key);
   uint64_t* reversed_subkeys = reverse_order(subkeys);
 
-  uint64_t* decoded_message = malloc(size);
+  uint64_t* decoded_message = (uint64_t*)malloc(size);
 
   for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
     decoded_message[i] = des(&encoded[i], reversed_subkeys);
@@ -322,7 +322,7 @@ int main(int argc, char** argv) {
   //ceil the amount of elements to be read
   const size_t elements_to_read = (file_size + sizeof(uint64_t) - 1) / sizeof(uint64_t);
 
-  uint64_t* file_buffer = malloc(elements_to_read * sizeof(uint64_t));
+  uint64_t* file_buffer = (uint64_t*)malloc(elements_to_read * sizeof(uint64_t));
   fread(file_buffer, sizeof(uint8_t), file_size, input_file);
 
   fclose(input_file);
