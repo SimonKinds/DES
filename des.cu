@@ -226,7 +226,8 @@ uint32_t calculate_r(const uint32_t prev_l, const uint32_t prev_r, const uint64_
 
 __global__
 void des(const uint64_t* message, const uint64_t* subkeys, uint64_t* output_block) {
-  const uint64_t permutated = initial_permutation(message);
+  // kind of like grid stride looping, but in a single dimension
+  const uint64_t permutated = initial_permutation(&message[threadIdx.x]);
 
   uint32_t l = permutated >> 32;
 
@@ -243,7 +244,7 @@ void des(const uint64_t* message, const uint64_t* subkeys, uint64_t* output_bloc
   concat <<= 32;
   concat |= l;
 
-  *output_block = inverse_initial_permutation(&concat);
+  output_block[threadIdx.x] = inverse_initial_permutation(&concat);
 }
 
 uint64_t* encode(const uint64_t* message, const unsigned int size, const uint64_t key) {
@@ -263,9 +264,7 @@ uint64_t* encode(const uint64_t* message, const unsigned int size, const uint64_
   uint64_t* encoded_message_gpu;
   cudaMalloc(&encoded_message_gpu, size);
 
-  for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
-    des<<< 1,1 >>>(&message_gpu[i], subkeys_gpu, &encoded_message_gpu[i]);
-  }
+  des<<< 1, size / sizeof(uint64_t) >>>(message_gpu, subkeys_gpu, encoded_message_gpu);
 
   uint64_t* encoded_message = (uint64_t*) malloc(size);
   cudaMemcpy(encoded_message, encoded_message_gpu, size, cudaMemcpyDeviceToHost);
@@ -294,9 +293,7 @@ uint64_t* decode(const uint64_t* encoded, const unsigned int size, const uint64_
   uint64_t* decoded_message_gpu;
   cudaMalloc(&decoded_message_gpu, size);
 
-  for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
-     des<<< 1,1 >>>(&encoded_message_gpu[i], reversed_subkeys_gpu, &decoded_message_gpu[i]);
-  }
+  des<<< 1, size / sizeof(uint64_t) >>>(encoded_message_gpu, reversed_subkeys_gpu, decoded_message_gpu);
 
   uint64_t* decoded_message = (uint64_t*) malloc(size);
   cudaMemcpy(decoded_message, decoded_message_gpu, size, cudaMemcpyDeviceToHost);
