@@ -6,15 +6,15 @@
 #include "constants.h"
 
 void permutate(const uint8_t* input_array,
-                   const unsigned int input_bit_count,
-                   uint8_t* output_array,
-                   const unsigned int output_bit_cunt,
-                   const unsigned int* permutation_array) {
+    const unsigned int input_bit_count,
+    uint8_t* output_array,
+    const unsigned int output_bit_cunt,
+    const unsigned int* permutation_array) {
 
   for(unsigned int i = 0; i < output_bit_cunt; ++i) {
     // all indexes in the permutation arrays are starting at 1
     unsigned int original_pos = permutation_array[i] - 1;
-    
+
     // starts counting from left to right (MSB = 0)
     uint8_t original_index = (input_bit_count - original_pos - 1) / 8;
     uint8_t original_bit_pos = (input_bit_count - original_pos + 7) % 8;
@@ -30,14 +30,14 @@ void permutate(const uint8_t* input_array,
 
 __device__
 void permutate_gpu(const uint8_t* input_array,
-                   const unsigned int input_bit_count,
-                   uint8_t* output_array,
-                   const unsigned int output_bit_cunt,
-                   const unsigned int* permutation_array) {
+    const unsigned int input_bit_count,
+    uint8_t* output_array,
+    const unsigned int output_bit_cunt,
+    const unsigned int* permutation_array) {
   for(unsigned int i = 0; i < output_bit_cunt; ++i) {
     // all indexes in the permutation arrays are starting at 1
     unsigned int original_pos = permutation_array[i] - 1;
-    
+
     // starts counting from left to right (MSB = 0)
     uint8_t original_index = (input_bit_count - original_pos - 1) / 8;
     uint8_t original_bit_pos = (input_bit_count - original_pos + 7) % 8;
@@ -51,15 +51,17 @@ void permutate_gpu(const uint8_t* input_array,
   }
 }
 
+__device__
 uint64_t initial_permutation(const uint64_t* message) {
   uint64_t permutated = 0;
-  permutate((uint8_t*)message, BLOCK_SIZE, (uint8_t*)&permutated, BLOCK_SIZE, IP_PERMUTATION_ARRAY);
+  permutate_gpu((uint8_t*)message, BLOCK_SIZE, (uint8_t*)&permutated, BLOCK_SIZE, IP_PERMUTATION_ARRAY);
   return permutated;
 }
 
+__device__
 uint64_t inverse_initial_permutation(const uint64_t* data) {
   uint64_t permutated = 0;
-  permutate((uint8_t*)data, BLOCK_SIZE, (uint8_t*)&permutated, BLOCK_SIZE, INVERSE_IP_PERMUTATION_ARRAY);
+  permutate_gpu((uint8_t*)data, BLOCK_SIZE, (uint8_t*)&permutated, BLOCK_SIZE, INVERSE_IP_PERMUTATION_ARRAY);
   return permutated;
 }
 
@@ -75,15 +77,17 @@ uint64_t key_permutation_second(const uint64_t* key) {
   return permutated;
 }
 
+__device__
 uint64_t expansion_permutation(const uint32_t* r) {
   uint64_t permutated = 0;
-  permutate((uint8_t*)r, BLOCK_SIZE / 2, (uint8_t*)&permutated, KEY_SIZE_SECOND_PERMUTATION, E);
+  permutate_gpu((uint8_t*)r, BLOCK_SIZE / 2, (uint8_t*)&permutated, KEY_SIZE_SECOND_PERMUTATION, E);
   return permutated;
 }
 
+__device__
 uint32_t p_permutation(const uint32_t* data) {
   uint32_t permutated = 0;
-  permutate((uint8_t*)data, BLOCK_SIZE / 2, (uint8_t*)&permutated, BLOCK_SIZE / 2, P);
+  permutate_gpu((uint8_t*)data, BLOCK_SIZE / 2, (uint8_t*)&permutated, BLOCK_SIZE / 2, P);
   return permutated;
 }
 
@@ -162,10 +166,11 @@ uint64_t concatCD(const uint32_t c, const uint32_t d) {
   uint64_t concat = c;
   concat <<= 28;
   concat |= d;
-  
+
   return concat;
 }
 
+__device__
 uint32_t feistal(const uint32_t* r, const uint64_t* key) {
   const uint64_t expanded = expansion_permutation(r);
   const uint64_t xored = expanded ^ (*key);
@@ -179,6 +184,7 @@ uint32_t feistal(const uint32_t* r, const uint64_t* key) {
 
 //  S8 is LSB, S1 is MSB
 // data is 48 bits
+__device__
 uint32_t s_box_transformation(const uint64_t* data) {
 
   uint32_t val = 0;
@@ -190,7 +196,7 @@ uint32_t s_box_transformation(const uint64_t* data) {
   val |= s_value((*data << 30) >> 42, S6_BOX) << 8;
   // use 6 MSB
   val |= s_value((*data << 24) >> 42, S5_BOX) << 12;
-  
+
   // use 6 LSB
   val |= s_value((*data << 18) >> 42, S4_BOX) << 16;
   // use 4 LSB from *data as MSB and 2 MSB from *data as LSB
@@ -203,6 +209,7 @@ uint32_t s_box_transformation(const uint64_t* data) {
   return val;
 }
 
+__device__
 uint8_t s_value(const uint8_t b, const unsigned int* s_box) {
   // first and last
   unsigned int i = ((b & 0x20) >> 4) | (b & 0x1);
@@ -212,15 +219,17 @@ uint8_t s_value(const uint8_t b, const unsigned int* s_box) {
   return s_box[i * 16 + j];
 }
 
+__device__
 uint32_t calculate_r(const uint32_t prev_l, const uint32_t prev_r, const uint64_t* key) {
   return prev_l ^ feistal(&prev_r, key);
 }
 
-uint64_t des(const uint64_t* message, const uint64_t* subkeys) {
+__global__
+void des(const uint64_t* message, const uint64_t* subkeys, uint64_t* output_block) {
   const uint64_t permutated = initial_permutation(message);
 
   uint32_t l = permutated >> 32;
-  
+
   // will only use the 32 LSB
   uint32_t r = (permutated << 32) >> 32;
 
@@ -234,21 +243,37 @@ uint64_t des(const uint64_t* message, const uint64_t* subkeys) {
   concat <<= 32;
   concat |= l;
 
-  const uint64_t inverse_permutation = inverse_initial_permutation(&concat);
-
-  return inverse_permutation;
+  *output_block = inverse_initial_permutation(&concat);
 }
 
 uint64_t* encode(const uint64_t* message, const unsigned int size, const uint64_t key) {
+
+  uint64_t* message_gpu;
+  cudaMalloc(&message_gpu, size);
+  cudaMemcpy(message_gpu, message, size, cudaMemcpyHostToDevice);
+
   uint64_t* subkeys = generate_subkeys(key);
-
-  uint64_t* encoded_message = (uint64_t*)malloc(size);
-
-  for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
-    encoded_message[i] = des(&message[i], subkeys);
-  }
+  uint64_t* subkeys_gpu;
+  cudaMalloc(&subkeys_gpu, 16 * sizeof(uint64_t));
+  cudaMemcpy(subkeys_gpu, subkeys, 16 * sizeof(uint64_t), cudaMemcpyHostToDevice);
 
   free(subkeys);
+
+
+  uint64_t* encoded_message_gpu;
+  cudaMalloc(&encoded_message_gpu, size);
+
+  for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
+    des<<< 1,1 >>>(&message_gpu[i], subkeys_gpu, &encoded_message_gpu[i]);
+  }
+
+  uint64_t* encoded_message = (uint64_t*) malloc(size);
+  cudaMemcpy(encoded_message, encoded_message_gpu, size, cudaMemcpyDeviceToHost);
+
+  cudaFree(subkeys_gpu);
+  cudaFree(message_gpu);
+  cudaFree(encoded_message_gpu);
+
   return encoded_message;
 }
 
@@ -256,10 +281,11 @@ uint64_t* decode(const uint64_t* encoded, const unsigned int size, const uint64_
   uint64_t* subkeys = generate_subkeys(key);
   uint64_t* reversed_subkeys = reverse_order(subkeys);
 
-  uint64_t* decoded_message = (uint64_t*)malloc(size);
+  uint64_t* decoded_message;
+  cudaMalloc(&decoded_message, size);
 
   for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
-    decoded_message[i] = des(&encoded[i], reversed_subkeys);
+     des<<< 1,1 >>>(&encoded[i], reversed_subkeys, &decoded_message[i]);
   }
 
   free(subkeys);
