@@ -278,18 +278,33 @@ uint64_t* encode(const uint64_t* message, const unsigned int size, const uint64_
 }
 
 uint64_t* decode(const uint64_t* encoded, const unsigned int size, const uint64_t key) {
+  uint64_t* encoded_message_gpu;
+  cudaMalloc(&encoded_message_gpu, size);
+  cudaMemcpy(encoded_message_gpu, encoded, size, cudaMemcpyHostToDevice);
+
   uint64_t* subkeys = generate_subkeys(key);
   uint64_t* reversed_subkeys = reverse_order(subkeys);
-
-  uint64_t* decoded_message;
-  cudaMalloc(&decoded_message, size);
-
-  for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
-     des<<< 1,1 >>>(&encoded[i], reversed_subkeys, &decoded_message[i]);
-  }
+  uint64_t* reversed_subkeys_gpu;
+  cudaMalloc(&reversed_subkeys_gpu, 16 * sizeof(uint64_t));
+  cudaMemcpy(reversed_subkeys_gpu, reversed_subkeys, 16 * sizeof(uint64_t), cudaMemcpyHostToDevice);
 
   free(subkeys);
   free(reversed_subkeys);
+
+  uint64_t* decoded_message_gpu;
+  cudaMalloc(&decoded_message_gpu, size);
+
+  for(unsigned int i = 0; i < size / sizeof(uint64_t); ++i) {
+     des<<< 1,1 >>>(&encoded_message_gpu[i], reversed_subkeys_gpu, &decoded_message_gpu[i]);
+  }
+
+  uint64_t* decoded_message = (uint64_t*) malloc(size);
+  cudaMemcpy(decoded_message, decoded_message_gpu, size, cudaMemcpyDeviceToHost);
+
+  cudaFree(reversed_subkeys_gpu);
+  cudaFree(encoded_message_gpu);
+  cudaFree(decoded_message_gpu);
+
   return decoded_message;
 }
 
