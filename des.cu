@@ -395,7 +395,12 @@ int main(int argc, char** argv) {
     print_key_error_msg();
     return 1;
   }
-  const uint64_t key = *(uint64_t*)key_string;
+  uint64_t key = 0;
+  for (unsigned int i = 0; i < 8; ++i) {
+    key <<= 8;
+    key |= key_string[i];
+  }
+
   const char* output_file_name = argv[5];
   FILE* input_file = fopen(input_file_name, "rb");
 
