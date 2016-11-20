@@ -58,7 +58,7 @@ uint64_t* decode(const uint64_t* encoded, const unsigned int size, const uint64_
 uint64_t pkcs5_padding(const uint64_t* block, unsigned int amount_of_bytes_to_pad);
 //returns the amount of bytes removed
 //updates the block to prepare for writing
-unsigned int count_padding_bytes(const uint64_t* block);
+unsigned int count_padding_bytes(const uint64_t* blocks, const unsigned int byte_count);
 
 void print_help_message();
 

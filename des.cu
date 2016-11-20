@@ -315,13 +315,13 @@ uint64_t pkcs5_padding(const uint64_t* block, unsigned int amount_of_bytes_to_pa
   return padded;
 }
 
-unsigned int count_padding_bytes(const uint64_t* block) {
-  const uint8_t* bytes = (const uint8_t*) block;
-  const unsigned int amount_of_bytes = BLOCK_SIZE / 8;; 
-  const uint8_t prev_value = bytes[0];
-  for(unsigned int i = 1; i < amount_of_bytes; ++i) {
+unsigned int count_padding_bytes(const uint64_t* blocks, const unsigned int byte_count) {
+  const uint8_t* bytes_in_last_block = &((const uint8_t*) blocks)[byte_count - 8];
+  const uint8_t prev_value = bytes_in_last_block[0];
+  const unsigned int byte_count_in_block = BLOCK_SIZE / 8;
+  for(unsigned int i = 1; i < byte_count_in_block; ++i) {
     //if they're no longer equal, it should be the end of the padding
-    if(bytes[i] != prev_value) {
+    if(bytes_in_last_block[i] != prev_value) {
       //but if it's not equal to the amount of padding added, then was not actually padding
       if(prev_value == i) {
         return i;
@@ -401,7 +401,7 @@ int main(int argc, char** argv) {
 
   } else if(strcmp(argv[1], "-d") == 0) {
     uint64_t* decoded_file_buffer = decode(file_buffer, file_size, key);
-    const size_t bytes_of_padding = count_padding_bytes(decoded_file_buffer);
+    const size_t bytes_of_padding = count_padding_bytes(decoded_file_buffer, file_size);
     decoded_file_buffer[ file_size / sizeof(uint64_t) - 1 ] >>= bytes_of_padding * 8;
 
     const size_t output_byte_count = file_size - bytes_of_padding;
