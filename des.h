@@ -50,7 +50,7 @@ __device__
 uint32_t calculate_r(const uint32_t prev_l, const uint32_t prev_r, const uint64_t* key);
 
 __global__
-void des(const uint64_t* message, const uint64_t* subkeys, uint64_t* output_block);
+void des(const uint64_t* message, const uint64_t* subkeys, const unsigned int block_count, uint64_t* output_block);
 
 uint64_t* encode(const uint64_t* message, const unsigned int size, const uint64_t key);
 uint64_t* decode(const uint64_t* encoded, const unsigned int size, const uint64_t key);

@@ -5,7 +5,10 @@ const unsigned int AMOUNT_OF_KEYS = 16;
 const unsigned int KEY_SIZE_FIRST_PERMUTATION = 56;
 const unsigned int KEY_SIZE_SECOND_PERMUTATION = 48;
 
-const unsigned int BLOCK_SIZE = 64;
+const unsigned int BLOCK_SIZE_BITS = 64;
+const unsigned int BLOCK_SIZE_BYTES = 8;
+
+const unsigned int CUDA_THREAD_COUNT_PER_BLOCK = 1024;
 
 __device__
 const unsigned int IP_PERMUTATION_ARRAY[64] = {
