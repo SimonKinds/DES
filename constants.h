@@ -8,6 +8,8 @@ const unsigned int KEY_SIZE_SECOND_PERMUTATION = 48;
 const unsigned int BLOCK_SIZE_BITS = 64;
 const unsigned int BLOCK_SIZE_BYTES = 8;
 
+// warps are usually of size 32, which means the thread count should be divisible by 32
+// 1024 was chosen because there is a popular machine learning framework caffe that uses this size
 const unsigned int CUDA_THREAD_COUNT_PER_BLOCK = 1024;
 
 __device__

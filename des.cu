@@ -29,6 +29,11 @@ void permutate(const uint8_t* input_array,
   }
 }
 
+/* 
+ * just a copy of the permutate function but on the GPU no need to run multiple
+ * threads on this since it would likely only just work on the same cache block
+ * creating conflicts.
+ */
 __device__
 void permutate_gpu(const uint8_t* input_array,
     const unsigned int input_bit_count,
@@ -227,8 +232,8 @@ uint32_t calculate_r(const uint32_t prev_l, const uint32_t prev_r, const uint64_
 
 __global__
 void des(const uint64_t* message, const uint64_t* subkeys, const unsigned int block_count, uint64_t* output_block) {
+  // use grid stride looping to make sure to work on all objects
   for(unsigned int i = blockIdx.x * blockDim.x + threadIdx.x; i < block_count; i += blockDim.x * gridDim.x) {
-    // kind of like grid stride looping, but in a single dimension
     const uint64_t permutated = initial_permutation(&message[i]);
 
     uint32_t l = permutated >> 32;
