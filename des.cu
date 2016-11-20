@@ -273,7 +273,8 @@ uint64_t* encode(const uint64_t* message, const unsigned int size,
   cudaMalloc(&encoded_message_gpu, size);
 
   const int cuda_blocks =
-      (size + CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t) - 1) / (CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t));
+      (size + CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t) - 1) /
+      (CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t));
   des<<<cuda_blocks, CUDA_THREAD_COUNT_PER_BLOCK>>>(
       message_gpu, subkeys_gpu, size / sizeof(uint64_t), encoded_message_gpu);
 
@@ -308,7 +309,8 @@ uint64_t* decode(const uint64_t* encoded, const unsigned int size,
   cudaMalloc(&decoded_message_gpu, size);
 
   const int cuda_blocks =
-      (size + CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t) - 1) / (CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t));
+      (size + CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t) - 1) /
+      (CUDA_THREAD_COUNT_PER_BLOCK * sizeof(uint64_t));
   des<<<cuda_blocks, CUDA_THREAD_COUNT_PER_BLOCK>>>(
       encoded_message_gpu, reversed_subkeys_gpu, size / sizeof(uint64_t),
       decoded_message_gpu);
