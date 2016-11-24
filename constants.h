@@ -1,12 +1,15 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
+// Definition of all constants
+
 const unsigned int AMOUNT_OF_KEYS = 16;
 const unsigned int KEY_SIZE_FIRST_PERMUTATION = 56;
 const unsigned int KEY_SIZE_SECOND_PERMUTATION = 48;
 
 const unsigned int BLOCK_SIZE = 64;
 
+// initial permutation table
 const unsigned int IP_PERMUTATION_ARRAY[64] = {
   58, 50, 42, 34, 26, 18, 10, 2, 
   60, 52, 44, 36, 28, 20, 12, 4, 
@@ -18,6 +21,7 @@ const unsigned int IP_PERMUTATION_ARRAY[64] = {
   63, 55, 47, 39, 31, 23, 15, 7, 
 };
 
+// reverse initial permutation table (final permutation)
 const unsigned int INVERSE_IP_PERMUTATION_ARRAY[64] = {
   40, 8, 48, 16, 56, 24, 64, 32,
   39, 7, 47, 15, 55, 23, 63, 31,
@@ -29,6 +33,7 @@ const unsigned int INVERSE_IP_PERMUTATION_ARRAY[64] = {
   33, 1, 41, 9, 49, 17, 57, 25
 };
 
+// permuted choice 1 (64 bit -> 56 bit) 
 const unsigned int PC_1[56] = {
   57, 49, 41, 33, 25, 17, 9,
   1, 58, 50, 42, 34, 26, 18,
@@ -40,6 +45,7 @@ const unsigned int PC_1[56] = {
   21, 13, 5, 28, 20, 12, 4
 };
 
+// permuted choice 2 (56 bit -> 48 bit)
 const unsigned int PC_2[48] = {
   14, 17, 11, 24, 1, 5,
   3, 28, 15, 6, 21, 10,
@@ -51,6 +57,7 @@ const unsigned int PC_2[48] = {
   46, 42, 50, 36, 29, 32
 };
 
+// Expansion (32 bit -> 48 bit)
 const unsigned int E[48] = {
   32, 1, 2, 3, 4, 5,
   4, 5, 6, 7, 8, 9,
@@ -62,6 +69,7 @@ const unsigned int E[48] = {
   28, 29, 30, 31, 32, 1
 };
 
+// key shift
 const unsigned int KEY_SHIFT_ARRAY[16] = {
   1,
   1,
@@ -131,6 +139,7 @@ const unsigned int S8_BOX[64] = {
     2, 1, 14, 7, 4, 10, 8, 13, 15, 12, 9, 0, 3, 5, 6, 11
 };
 
+// permutation table P (last step of the f-function)
 const unsigned int P[32] = {
   16, 7, 20, 21,
   29, 12, 28, 17,
