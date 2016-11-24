@@ -323,12 +323,14 @@ int main(int argc, char** argv) {
     return 1;
   }
   uint64_t key = 0;
+  // read input key (8 chars = 8 Byte), first key starts at most significant bit in var key 
   for (unsigned int i = 0; i < 8; ++i) {
     key <<= 8;
     key |= key_string[i];
   }
 
   const char* output_file_name = argv[5];
+  // open input file
   FILE* input_file = fopen(input_file_name, "rb");
 
   // obtain file size:
@@ -340,34 +342,40 @@ int main(int argc, char** argv) {
   // ceil the amount of elements to be read
   const size_t elements_to_read =
       (file_size + sizeof(uint64_t) - 1) / sizeof(uint64_t);
-
+  
   uint64_t* file_buffer = malloc(elements_to_read * sizeof(uint64_t));
   fread(file_buffer, sizeof(uint8_t), file_size, input_file);
 
   fclose(input_file);
-
+  
+  // encode "-e" / decode "-d"
   if (strcmp(argv[1], "-e") == 0) {
     // add padding to the last element (if needed)
     const unsigned int output_byte_count = elements_to_read * sizeof(uint64_t);
     file_buffer[elements_to_read - 1] = pkcs5_padding(
         &file_buffer[elements_to_read - 1], output_byte_count - file_size);
-
+  
+    // encode
     uint64_t* encoded_file_buffer = encode(file_buffer, output_byte_count, key);
-
+  
+    //create output file
     write_to_file(output_file_name, (uint8_t*)encoded_file_buffer,
                   output_byte_count);
 
     free(encoded_file_buffer);
 
   } else if (strcmp(argv[1], "-d") == 0) {
+    // decode
     uint64_t* decoded_file_buffer = decode(file_buffer, file_size, key);
     const size_t bytes_of_padding =
         count_padding_bytes(decoded_file_buffer, file_size);
+    // remove padding (if needed)
     decoded_file_buffer[file_size / sizeof(uint64_t) - 1] >>=
         bytes_of_padding * 8;
 
     const size_t output_byte_count = file_size - bytes_of_padding;
-
+    
+    //create output file
     write_to_file(output_file_name, (uint8_t*)decoded_file_buffer,
                   output_byte_count);
 
