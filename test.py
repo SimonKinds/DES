@@ -10,6 +10,14 @@ import time
 
 # file sizes in bytes
 def test(constants_file_name, thread_counts, file_sizes):
+    files_to_encrypt = []
+    for file_size in file_sizes:
+        input_file_name = 'file_to_encrypt'
+        file_name = input_file_name + str(file_size)
+        files_to_encrypt.append(file_name)
+
+        generate_input_file(file_name, file_size)
+
     with open('cuda_log.csv', 'w') as cuda_log:
         fieldnames = ['thread_count', 'file_size (Bytes)', 'Execution time (ms)']
         log = csv.DictWriter(cuda_log, fieldnames=fieldnames)
@@ -19,12 +27,12 @@ def test(constants_file_name, thread_counts, file_sizes):
             update_constants_file(constants_file_name, original_content, thread_count)
             compile()
 
-            for file_size in file_sizes:
-                input_file_name = 'file_to_encrypt'
-                generate_input_file(input_file_name, file_size)
-                log_execution(log, thread_count, file_size, execution_main_test(input_file_name, './des'))
+            for idx, file_size in enumerate(file_sizes):
+                log_execution(log, thread_count, file_size, execution_main_test(files_to_encrypt[idx], './des'))
 
-def clean_up(input_file_name, encrypted_file_name, decrypted_file_name):
+    subprocess.call(['rm'] + files_to_encrypt)
+
+def clean_up(input_file_name, files_to_encrypt, decrypted_file_name):
     subprocess.call(['rm', input_file_name, encrypted_file_name, decrypted_file_name])
 
 def log_execution(log, thread_count, file_size, execution_time):
@@ -51,7 +59,7 @@ def execution_main_test(input_file_name, executable_file_name):
     if ret_val != 0:
         raise ValueError('Did not decrypt properly')
 
-    clean_up(input_file_name, encrypted_file_name, decrypted_file_name)
+    subprocess.call(['rm', encrypted_file_name, decrypted_file_name])
 
     return execution_time
 
@@ -62,7 +70,15 @@ def randomize_key():
     return key
 
 def generate_input_file(output_file_name, file_size):
-    subprocess.call(['dd', 'if=/dev/urandom', 'of=' + output_file_name, 'bs=1', 'count=' + str(file_size)])
+    bs = 'bs=1'
+    if file_size > 10**3:
+        bs = 'bs=1000'
+        file_size //= 10**3
+    elif file_size > 10**6:
+        bs = 'bs=1000000'
+        file_size //= 10**6
+
+    subprocess.call(['dd', 'if=/dev/urandom', 'of=' + output_file_name, bs, 'count=' + str(file_size)])
 
 def read_file(filename):
     with open(filename, 'r') as f:
