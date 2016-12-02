@@ -24,12 +24,15 @@ def test(constants_file_name, thread_counts, file_sizes):
                 generate_input_file(input_file_name, file_size)
                 log_execution(log, thread_count, file_size, execution_main_test(input_file_name, './des'))
 
+def clean_up(input_file_name, encrypted_file_name, decrypted_file_name):
+    subprocess.call(['rm', input_file_name, encrypted_file_name, decrypted_file_name])
+
 def log_execution(log, thread_count, file_size, execution_time):
     log.writerow({'thread_count': thread_count, 
                     'file_size (Bytes)': file_size, 
                     'Execution time (ms)':execution_time})
 def compile():
-    subprocess.run(['make'], check=True)
+    subprocess.call(['make'])
 
 # return execution time
 def execution_main_test(input_file_name, executable_file_name):
@@ -37,14 +40,18 @@ def execution_main_test(input_file_name, executable_file_name):
     encrypted_file_name = 'encrypted'
 
     start_time = time.time()
-    subprocess.run([executable_file_name, '-e', input_file_name, '-k', key, encrypted_file_name])
+    subprocess.call([executable_file_name, '-e', input_file_name, '-k', key, encrypted_file_name])
     execution_time = time.time() - start_time
 
     decrypted_file_name = 'decrypted'
-    subprocess.run([executable_file_name, '-d', encrypted_file_name, '-k', key, decrypted_file_name])
+    subprocess.call([executable_file_name, '-d', encrypted_file_name, '-k', key, decrypted_file_name])
 
     # throw if the input file and the decrypted file are not equal
-    completed_process = subprocess.run(['cmp', input_file_name, decrypted_file_name], check=True)
+    ret_val = subprocess.call(['cmp', input_file_name, decrypted_file_name])
+    if ret_val != 0:
+        raise ValueError('Did not decrypt properly')
+
+    clean_up(input_file_name, encrypted_file_name, decrypted_file_name)
 
     return execution_time
 
@@ -55,7 +62,7 @@ def randomize_key():
     return key
 
 def generate_input_file(output_file_name, file_size):
-    subprocess.run(['dd', 'if=/dev/urandom', 'of=' + output_file_name, 'bs=1', 'count=' + str(file_size)])
+    subprocess.call(['dd', 'if=/dev/urandom', 'of=' + output_file_name, 'bs=1', 'count=' + str(file_size)])
 
 def read_file(filename):
     with open(filename, 'r') as f:
