@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 import csv
+import math
 from itertools import permutations
 import random
 import subprocess
@@ -19,7 +20,7 @@ def test(constants_file_name, thread_counts, file_sizes):
         generate_input_file(file_name, file_size)
 
     with open('cuda_log.csv', 'w') as cuda_log:
-        fieldnames = ['thread_count', 'file_size (Bytes)', 'Execution time (ms)']
+        fieldnames = ['thread_count', 'cuda_block_count', 'file_size (Bytes)', 'Execution time (ms)']
         log = csv.DictWriter(cuda_log, fieldnames=fieldnames)
 
         original_content = read_file(constants_file_name)
@@ -28,15 +29,21 @@ def test(constants_file_name, thread_counts, file_sizes):
             compile()
 
             for idx, file_size in enumerate(file_sizes):
-                log_execution(log, thread_count, file_size, execution_main_test(files_to_encrypt[idx], './des'))
+                log_execution(log, thread_count, cuda_block_count(file_size, thread_count), file_size, execution_main_test(files_to_encrypt[idx], './des'))
 
     subprocess.call(['rm'] + files_to_encrypt)
+
+def cuda_block_count(file_size, thread_count):
+    # one thread per block
+    # One block is 8 bytes
+    return math.ceil(file_size / (thread_count * 8))
 
 def clean_up(input_file_name, files_to_encrypt, decrypted_file_name):
     subprocess.call(['rm', input_file_name, encrypted_file_name, decrypted_file_name])
 
-def log_execution(log, thread_count, file_size, execution_time):
+def log_execution(log, thread_count, cuda_block_count, file_size, execution_time):
     log.writerow({'thread_count': thread_count, 
+                    'cuda_block_count': cuda_block_count,
                     'file_size (Bytes)': file_size, 
                     'Execution time (ms)':execution_time})
 def compile():
@@ -99,7 +106,7 @@ def cuda_thread_count_string(thread_count):
 
 if __name__ == '__main__':
     contants_file_name = 'constants.h'
-    thread_counts = [32, 64, 128, 256, 512, 1024, 2048, 4096]
+    thread_counts = [32, 64, 128, 256, 512, 1024]
     # 1B 8B 1kB 5kB 1M 500M 1G
     # not using 64bit aligned to make it a bit harder for the algorithm
     file_sizes = [1, 8, 10**3, 5*10**3, 10**6, 5*10**8, 10**9]
